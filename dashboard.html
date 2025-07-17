@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>لوحة التحكم</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: auto;
+            margin: 0;
+            flex-direction: column;
+            text-align: center;
+            padding: 40px;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #fff;
+        }
+        button {
+            background: linear-gradient(45deg, #ff6f91, #ff9671);
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 20px #ff6f91;
+            transition: background 0.3s ease;
+            margin-bottom: 30px;
+            align-self: center;
+        }
+        button:hover {
+            background: linear-gradient(45deg, #ff9671, #ff6f91);
+        }
+        table {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+        th, td {
+            padding: 15px;
+            color: #fff;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        th {
+            background: rgba(255, 255, 255, 0.2);
+            font-size: 1.1rem;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1 id="welcomeMessage" style="margin: 0;">مرحباً بك في لوحة التحكم</h1>
+        <button id="logoutBtn" style="background: #ff4d4d; border: none; border-radius: 15px; padding: 10px 20px; font-size: 1rem; font-weight: 700; color: #fff; cursor: pointer; box-shadow: 0 0 15px #ff4d4d; transition: background 0.3s ease;">تسجيل خروج</button>
+    </div>
+    <button id="showResultsBtn">عرض نتيجة الطالب</button>
+    <table id="resultsTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>المادة</th>
+                <th>التقدير</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody">
+        </tbody>
+    </table>
+
+    <script>
+        // Read user info from sessionStorage
+        const userName = sessionStorage.getItem('userName');
+        const userId = sessionStorage.getItem('userId');
+
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const showResultsBtn = document.getElementById('showResultsBtn');
+        const resultsTable = document.getElementById('resultsTable');
+        const resultsBody = document.getElementById('resultsBody');
+
+        if (!userName || !userId) {
+            // Redirect to login if no user info
+            window.location.href = 'http://localhost:3001/login.html';
+        } else {
+            welcomeMessage.textContent = `مرحبا بك " ${userName} "`;
+        }
+
+        // Redirect to login on page refresh
+        window.addEventListener('beforeunload', function (e) {
+            sessionStorage.clear();
+        });
+
+        showResultsBtn.addEventListener('click', () => {
+            if (!userId) {
+                alert('لم يتم التعرف على المستخدم.');
+                return;
+            }
+            if (resultsTable.style.display === 'none') {
+                fetch(`http://localhost:3001/results?user_id=${userId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        resultsBody.innerHTML = '';
+                        if (data.length === 0) {
+                            resultsBody.innerHTML = '<tr><td colspan="2">لا توجد نتائج</td></tr>';
+                        } else {
+                            data.forEach(result => {
+                                const row = document.createElement('tr');
+                                const subjectCell = document.createElement('td');
+                                subjectCell.textContent = result.subject;
+                                const gradeCell = document.createElement('td');
+                                gradeCell.textContent = result.grade;
+                                row.appendChild(subjectCell);
+                                row.appendChild(gradeCell);
+                                resultsBody.appendChild(row);
+                            });
+                        }
+                        resultsTable.style.display = 'table';
+                        showResultsBtn.textContent = 'إخفاء نتيجة الطالب';
+                    })
+                    .catch(() => {
+                        alert('حدث خطأ أثناء جلب النتائج.');
+                    });
+            } else {
+                resultsTable.style.display = 'none';
+                showResultsBtn.textContent = 'عرض نتيجة الطالب';
+            }
+        });
+
+        // Logout button functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.clear();
+            window.location.href = 'http://localhost:3001/login.html';
+        });
+    </script>
+</body>
+</html>
